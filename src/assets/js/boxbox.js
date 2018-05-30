@@ -5,8 +5,15 @@
 // 4.是否可以后退，最大后退步数
 
 // modalType  BG Ball Wall Box Soldier
+import nothing from './util-section/requestAnimationShim'
+import util from './util-section/util';
+import {createModal} from "./cell";
+import {ImgLoad} from "./loadImg";
+import {Mission} from "./mission";
+console.log(createModal);
 
 var defaultOption = {
+  el: null, // 原生canvas
   width: 560,
   height: 560,
   numH: 16,
@@ -44,37 +51,10 @@ var defaultOption = {
   }
 };
 
-// mission只提供位置信息
-var Mission = function (curMission, missions) {
-  this.name = 'missionObj';
-  this.curMission = 1;
-  this.missions = [];
-};
-Mission.prototype = {
-  constructor: Mission,
-  setCurMission: function (num) {
-    this.curMission = num;
-  },
-  addMission: function (mission) {
-    this.missions.push(mission);
-  },
-  getMission: function () {
-    return this.missions[this.curMission - 1];
-    // return this.missions[2];
-  },
-  getMissionsCount: function () {
-    return this.missions.length;
-  },
-  getMissionNum: function () {
-    return this.curMission;
-  }
-};
-
 var Game = function (options) {
-  this._$el = $(options.el);
-  this._canvasEl = this._$el.find('#box').get(0);
+  this._canvasEl = options.el;
   this._ctx = this._canvasEl.getContext('2d');
-  this.options = $.extend({}, defaultOption, options);
+  this.options = util.extend(true,{}, defaultOption, options);
   this.cells = {}; // cell对象合集
   this.soldier = null;
   this.soldierDirection = 'right';
@@ -158,7 +138,7 @@ Game.prototype = {
   },
   updateMission: function (mission, type) {
     this.mission = mission;
-    this.mission_bak = $.extend(true, {}, mission);
+    this.mission_bak = util.extend(true, {}, mission);
     if (type !== 'backup') {
       this.backupArr = [];
       this.steps = 0;
@@ -169,25 +149,27 @@ Game.prototype = {
     }
     this.setMissionBg();
     this.loadImg();
-    this.renderMissionInfo();
-    this.renderStepInfo();
-    this.renderBackupBtn();
+    // this.renderMissionInfo();
+    // this.renderStepInfo();
+    // this.renderBackupBtn();
   },
   bindLoadListen: function () {
     var me = this;
+    console.log(this.imgLoad);
     this.imgLoad.on('load.start', function () {
-      // console.log('load.start');
+      console.log('load.start');
     });
     this.imgLoad.on('load.progress', function (data) {
-      // console.log('load.progress',data);
+      console.log('load.progress',data);
     });
     this.imgLoad.on('load.end', function () {
+      console.log('load.end')
       me.startGame();
     });
   },
   getAbsoluteImgSrc: function (src) {
-    if (!/^http[s]?|^\//.test(src)) {
-      src = location.href.replace(/[^/]+$/, src);
+    if (!/^http[s]?/.test(src)) {
+      src = location.href.replace(/[^/]+$/, /^\//.test(src) ? src.slice(1) : src);
     }
     return src;
   },
@@ -298,10 +280,6 @@ Game.prototype = {
     var viewObj = cell.getViewObj();
     var pos = cell.getPaintPos();
     // 如果在移动就会出现被后来的覆盖的情况
-    if (cell.move) {
-      // debugger;
-      // debugger;
-    }
     var offsetX = viewObj.offset[0];
     var offsetY = viewObj.offset[1];
     var x = (pos.c - 1) * this.cellWidth - offsetX;
@@ -366,7 +344,8 @@ Game.prototype = {
   bindControl: function () {
     // 绑定控制事件
     var me = this;
-    $(document).on('keydown', function (e) {
+    window.addEventListener('keydown', function (e) {
+
       var direction = '';
       var directionKey = '';
       var directionNum = 0;
@@ -396,29 +375,29 @@ Game.prototype = {
         me.moveTo(direction, directionKey, directionNum);
       }
     });
-    this._$el.on('click', '.btn', function (e) {
-      e.preventDefault();
-      var $this = $(this);
-      console.log($this.data('tag'));
-      if ($this.hasClass('disable')) {
-        return;
-      }
-      switch ($this.data('tag')) {
-        case 'refresh':
-          if (me.steps > 0) {
-            me.updateMission(me.mission_bak);
-          }
-          break;
-        case 'backup':
-          me.updateMission(me.backupArr.pop(), 'backup');
-          break;
-        case 'next':
-          me.missionObj.setCurMission(me.missionObj.getMissionNum() + 1);
-          me.updateMission(me.missionObj.getMission());
-          me._$el.find('.veil-outer').hide();
-          break;
-      }
-    });
+    // this._$el.on('click', '.btn', function (e) {
+    //   e.preventDefault();
+    //   var $this = $(this);
+    //   console.log($this.data('tag'));
+    //   if ($this.hasClass('disable')) {
+    //     return;
+    //   }
+    //   switch ($this.data('tag')) {
+    //     case 'refresh':
+    //       if (me.steps > 0) {
+    //         me.updateMission(me.mission_bak);
+    //       }
+    //       break;
+    //     case 'backup':
+    //       me.updateMission(me.backupArr.pop(), 'backup');
+    //       break;
+    //     case 'next':
+    //       me.missionObj.setCurMission(me.missionObj.getMissionNum() + 1);
+    //       me.updateMission(me.missionObj.getMission());
+    //       me._$el.find('.veil-outer').hide();
+    //       break;
+    //   }
+    // });
   },
   moveTo: function (direction, directionKey, directionNum) {
     // 判断是否能够移动
@@ -485,7 +464,7 @@ Game.prototype = {
       }
     }
     if (hasFinish) {
-      this._$el.find('.veil-outer').show();
+      // this._$el.find('.veil-outer').show();
     }
   },
   updateBackup: function () {
@@ -513,14 +492,16 @@ Game.prototype = {
     this.renderBackupBtn();
   },
   renderMissionInfo: function () {
-    this._$el.find('.mission-info').html(this.missionObj.getMissionNum() + '/' + this.missionObj.getMissionsCount());
+    // this._$el.find('.mission-info').html(this.missionObj.getMissionNum() + '/' + this.missionObj.getMissionsCount());
   },
   renderStepInfo: function () {
-    this._$el.find('.step-info').html(this.steps);
+    // this._$el.find('.step-info').html(this.steps);
   },
   renderBackupBtn: function () {
-    this._$el.find('[data-tag="backup"]')[this.backupArr.length === 0 ? 'addClass' : 'removeClass']('disable');
+    // this._$el.find('[data-tag="backup"]')[this.backupArr.length === 0 ? 'addClass' : 'removeClass']('disable');
   }
 };
 
-export default Game
+export default {
+  Game: Game
+}

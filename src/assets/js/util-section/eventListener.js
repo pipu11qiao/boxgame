@@ -1,16 +1,16 @@
 // 广播的对象
-export let EventListener = function () {
+export function EventListener() {
   this.name = 'eventListener';
   this._eventListeners = {};
 };
-EventListener.proptotype = {
+EventListener.prototype = {
   constructor: EventListener,
   on: function (eventName, callback) {
     // 判断该事件有没有人监听，如果没有加入，如果已经有了push
     if (!this._eventListeners[eventName]) {
       this._eventListeners[eventName] = [];
     }
-    this._eventListeners.push(callback);
+    this._eventListeners[eventName].push(callback);
   },
   off: function () {
     if (arguments.length === 0) {
@@ -40,7 +40,7 @@ EventListener.proptotype = {
     if (typeof arguments[0] !== 'string') {
       return;
     }
-    if (this._eventListeners[eventName]) {
+    if (!Array.isArray(this._eventListeners[eventName]) || this._eventListeners.length === 0) {
       return;
     }
     this._eventListeners[eventName].forEach(function (item) {

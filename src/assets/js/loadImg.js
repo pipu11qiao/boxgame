@@ -8,9 +8,9 @@ export let ImgLoad = function () {
   this.imgNum = 0;
   this.loadedImgNum = 0;
 };
-setPrototype(ImgLoad, PublicObj);
+setPrototype(ImgLoad, EventListener);
 ImgLoad.prototype.loadImg = function (imgArr) {
-  if (!$.isArray(imgArr)) {
+  if (!Array.isArray(imgArr)) {
     return;
   }
   this.trigger('load.start');
@@ -52,6 +52,12 @@ ImgLoad.prototype.imgLoad = function (src) {
   img.onload = function () {
     me.loadOneImg(this.src, this);
     this.onload = null;
+    this.onerror = null;
+  };
+  img.onerror = function () {
+    console.error('图片加载失败' + this.src);
+    this.onload = null;
+    this.onerror = null;
   };
   img.src = src;
 };

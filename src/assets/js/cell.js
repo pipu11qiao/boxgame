@@ -142,4 +142,6 @@ var CellModal = {
   BOX: Box,
   SOLDIER: Soldier
 };
-module.exports = createModal;
+export function createModal(type,options) {
+  return new CellModal[type](options)
+}
